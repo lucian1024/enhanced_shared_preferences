@@ -47,7 +47,7 @@ abstract class EnhancedSharedPreferencesStorePlatform {
   bool get isMock => false;
 
   /// Removes the value associated with the [key].
-  Future<bool> remove(String key);
+  Future<bool> remove(String key, {String? fileName});
 
   /// Stores the [value] associated with the [key].
   ///
@@ -58,13 +58,13 @@ abstract class EnhancedSharedPreferencesStorePlatform {
   /// * Value type "Int" must be passed if the value is of type `int`.
   /// * Value type "String" must be passed if the value is of type `String`.
   /// * Value type "StringList" must be passed if the value is of type `List<String>`.
-  Future<bool> setValue(String valueType, String key, Object value);
+  Future<bool> setValue(String valueType, String key, Object value, {String? fileName});
 
   /// Removes all keys and values in the store.
-  Future<bool> clear();
+  Future<bool> clear({String? fileName});
 
   /// Returns all key/value pairs persisted in this store.
-  Future<Map<String, Object>> getAll();
+  Future<Map<String, Object>> getAll({String? fileName});
 
   // This method makes sure that EnhancedSharedPreferencesStorePlatform isn't implemented with `implements`.
   //
@@ -89,24 +89,24 @@ class InMemoryEnhancedSharedPreferencesStore extends EnhancedSharedPreferencesSt
   final Map<String, Object> _data;
 
   @override
-  Future<bool> clear() async {
+  Future<bool> clear({String? fileName}) async {
     _data.clear();
     return true;
   }
 
   @override
-  Future<Map<String, Object>> getAll() async {
+  Future<Map<String, Object>> getAll({String? fileName}) async {
     return Map<String, Object>.from(_data);
   }
 
   @override
-  Future<bool> remove(String key) async {
+  Future<bool> remove(String key, {String? fileName}) async {
     _data.remove(key);
     return true;
   }
 
   @override
-  Future<bool> setValue(String valueType, String key, Object value) async {
+  Future<bool> setValue(String valueType, String key, Object value, {String? fileName}) async {
     _data[key] = value;
     return true;
   }

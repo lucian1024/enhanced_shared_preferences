@@ -15,8 +15,10 @@ import 'enhanced_shared_preferences_platform_interface.dart';
 class EnhancedSharedPreferences {
   EnhancedSharedPreferences._(this._preferenceCache);
 
-  static const String _prefix = 'flutter.';
   static Completer<EnhancedSharedPreferences>? _completer;
+
+  /// Currently loaded [SharedPreferences] file name
+  static String? _fileName;
 
   static EnhancedSharedPreferencesStorePlatform get _store =>
       EnhancedSharedPreferencesStorePlatform.instance;
@@ -25,7 +27,13 @@ class EnhancedSharedPreferences {
   ///
   /// Because this is reading from disk, it shouldn't be awaited in
   /// performance-sensitive blocks.
-  static Future<EnhancedSharedPreferences> getInstance() async {
+  static Future<EnhancedSharedPreferences> getInstance({String? fileName}) async {
+    if (_fileName != fileName) {
+      _fileName = fileName;
+      // Reset completer to null to read a different SharedPreferences file.
+      _completer = null;
+    }
+
     if (_completer == null) {
       final Completer<EnhancedSharedPreferences> completer =
       Completer<EnhancedSharedPreferences>();
@@ -62,27 +70,34 @@ class EnhancedSharedPreferences {
   /// Reads a value of any type from persistent storage.
   Object? get(String key) => _preferenceCache[key];
 
-  /// Reads a value from persistent storage, throwing an exception if it's not a
-  /// bool.
-  bool? getBool(String key) => _preferenceCache[key] as bool?;
+  /// Reads a value from persistent storage, return null if it's not existed or not an bool.
+  bool? getBool(String key) {
+    final value = _preferenceCache[key];
+    return (value is bool) ? value : null;
+  }
 
-  /// Reads a value from persistent storage, throwing an exception if it's not
-  /// an int.
-  int? getInt(String key) => _preferenceCache[key] as int?;
+  /// Reads a value from persistent storage, return null if it's not existed or not an int.
+  int? getInt(String key) {
+    final value = _preferenceCache[key];
+    return (value is int) ? value : null;
+  }
 
-  /// Reads a value from persistent storage, throwing an exception if it's not a
-  /// double.
-  double? getDouble(String key) => _preferenceCache[key] as double?;
+  /// Reads a value from persistent storage, return null if it's not existed or not an double.
+  double? getDouble(String key) {
+    final value = _preferenceCache[key];
+    return (value is double) ? value : null;
+  }
 
-  /// Reads a value from persistent storage, throwing an exception if it's not a
-  /// String.
-  String? getString(String key) => _preferenceCache[key] as String?;
+  /// Reads a value from persistent storage, return null if it's not existed or not an String.
+  String? getString(String key) {
+    final value = _preferenceCache[key];
+    return (value is String) ? value : null;
+  }
 
   /// Returns true if persistent storage the contains the given [key].
   bool containsKey(String key) => _preferenceCache.containsKey(key);
 
-  /// Reads a set of string values from persistent storage, throwing an
-  /// exception if it's not a string set.
+  /// Reads a set of string values from persistent storage, return null if it's not existed or not a string set.
   List<String>? getStringList(String key) {
     List<dynamic>? list = _preferenceCache[key] as List<dynamic>?;
     if (list != null && list is! List<String>) {
@@ -122,27 +137,20 @@ class EnhancedSharedPreferences {
 
   /// Removes an entry from persistent storage.
   Future<bool> remove(String key) {
-    final String prefixedKey = '$_prefix$key';
     _preferenceCache.remove(key);
-    return _store.remove(prefixedKey);
+    return _store.remove(key, fileName: _fileName);
   }
 
   Future<bool> _setValue(String valueType, String key, Object value) {
     ArgumentError.checkNotNull(value, 'value');
-    final String prefixedKey = '$_prefix$key';
     if (value is List<String>) {
       // Make a copy of the list so that later mutations won't propagate
       _preferenceCache[key] = value.toList();
     } else {
       _preferenceCache[key] = value;
     }
-    return _store.setValue(valueType, prefixedKey, value);
+    return _store.setValue(valueType, key, value, fileName: _fileName);
   }
-
-  /// Always returns true.
-  /// On iOS, synchronize is marked deprecated. On Android, we commit every set.
-  @deprecated
-  Future<bool> commit() async => true;
 
   /// Completes with true once the user preferences for the app has been cleared.
   Future<bool> clear() {
@@ -162,12 +170,10 @@ class EnhancedSharedPreferences {
   }
 
   static Future<Map<String, Object>> _getSharedPreferencesMap() async {
-    final Map<String, Object> fromSystem = await _store.getAll();
-    // Strip the flutter. prefix from the returned preferences.
+    final Map<String, Object> fromSystem = await _store.getAll(fileName: _fileName);
     final Map<String, Object> preferencesMap = <String, Object>{};
     for (final String key in fromSystem.keys) {
-      assert(key.startsWith(_prefix));
-      preferencesMap[key.substring(_prefix.length)] = fromSystem[key]!;
+      preferencesMap[key] = fromSystem[key]!;
     }
     return preferencesMap;
   }
@@ -179,11 +185,7 @@ class EnhancedSharedPreferences {
   static void setMockInitialValues(Map<String, Object> values) {
     final Map<String, Object> newValues =
     values.map<String, Object>((String key, Object value) {
-      String newKey = key;
-      if (!key.startsWith(_prefix)) {
-        newKey = '$_prefix$key';
-      }
-      return MapEntry<String, Object>(newKey, value);
+      return MapEntry<String, Object>(key, value);
     });
     EnhancedSharedPreferencesStorePlatform.instance =
         InMemoryEnhancedSharedPreferencesStore.withData(newValues);

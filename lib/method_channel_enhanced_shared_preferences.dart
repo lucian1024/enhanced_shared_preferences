@@ -18,30 +18,35 @@ const MethodChannel _kChannel =
 class MethodChannelEnhancedSharedPreferencesStore
     extends EnhancedSharedPreferencesStorePlatform {
   @override
-  Future<bool> remove(String key) async {
+  Future<bool> remove(String key, {String? fileName}) async {
     return (await _kChannel.invokeMethod<bool>(
       'remove',
-      <String, dynamic>{'key': key},
+      <String, dynamic>{'key': key, 'fileName': fileName},
     ))!;
   }
 
   @override
-  Future<bool> setValue(String valueType, String key, Object value) async {
+  Future<bool> setValue(String valueType, String key, Object value, {String? fileName}) async {
     return (await _kChannel.invokeMethod<bool>(
       'set$valueType',
-      <String, dynamic>{'key': key, 'value': value},
+      <String, dynamic>{'key': key, 'value': value, 'fileName': fileName},
     ))!;
   }
 
   @override
-  Future<bool> clear() async {
-    return (await _kChannel.invokeMethod<bool>('clear'))!;
+  Future<bool> clear({String? fileName}) async {
+    return (await _kChannel.invokeMethod<bool>(
+      'clear',
+      <String, dynamic>{'fileName': fileName},
+    ))!;
   }
 
   @override
-  Future<Map<String, Object>> getAll() async {
-    final Map<String, Object>? preferences =
-        await _kChannel.invokeMapMethod<String, Object>('getAll');
+  Future<Map<String, Object>> getAll({String? fileName}) async {
+    final Map<String, Object>? preferences = await _kChannel.invokeMapMethod<String, Object>(
+      'getAll',
+      <String, dynamic>{'fileName': fileName},
+    );
 
     if (preferences == null) {
       return <String, Object>{};

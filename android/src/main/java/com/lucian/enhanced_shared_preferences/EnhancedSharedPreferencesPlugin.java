@@ -3,10 +3,7 @@ package com.lucian.enhanced_shared_preferences;
 import androidx.annotation.NonNull;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
-import io.flutter.plugin.common.MethodChannel.Result;
 
 /** EnhancedSharedPreferencesPlugin */
 public class EnhancedSharedPreferencesPlugin implements FlutterPlugin {
@@ -16,13 +13,13 @@ public class EnhancedSharedPreferencesPlugin implements FlutterPlugin {
   /// when the Flutter Engine is detached from the Activity
   private MethodChannel channel;
 
-  private static final String CHANNEL_NAME = "plugins.lucian.com/enhancedshared_preferences_android";
+  private static final String CHANNEL_NAME = "plugins.lucian.com/enhanced_shared_preferences";
   private MethodCallHandlerImpl handler;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    channel = new MethodChannel(binding.getBinaryMessenger(), CHANNEL_NAME);
-    handler = new MethodCallHandlerImpl(binding.getApplicationContext());
+    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), CHANNEL_NAME);
+    handler = new MethodCallHandlerImpl(flutterPluginBinding.getApplicationContext());
     channel.setMethodCallHandler(handler);
   }
 
